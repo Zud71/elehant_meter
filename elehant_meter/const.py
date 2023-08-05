@@ -49,10 +49,12 @@ class ElehantData:
     id_meter: str = None
     battery: str = None
     metertype: MeterType = None
+    rssi: str = None
 
     def __init__(self, device=None, ad_data=None):
         self.device = device
         mac = device.address.lower()
+        self.rssi = device.rssi
 
         if device and ad_data:
             has_manufacurer_data = MANUFACTURER_ID in ad_data.manufacturer_data
