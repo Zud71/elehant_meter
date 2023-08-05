@@ -5,6 +5,8 @@ from enum import IntEnum
 from typing import List, NamedTuple
 
 from bleak.backends.device import BLEDevice
+from bleak.backends.scanner import AdvertisementData
+
 
 DOMAIN = "elehant_meter"
 
@@ -54,7 +56,7 @@ class ElehantData:
     def __init__(self, device=None, ad_data=None):
         self.device = device
         mac = device.address.lower()
-        self.rssi = device.rssi
+        
 
         if device and ad_data:
             has_manufacurer_data = MANUFACTURER_ID in ad_data.manufacturer_data
@@ -81,6 +83,7 @@ class ElehantData:
                 self.name +=  str(c_num)
                 self.meter_reading = str(c_count/10000)
                 self.temperature = str(c_temp)
+                self.rssi = ad_data.rssi
 
 
 
