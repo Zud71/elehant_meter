@@ -5,7 +5,6 @@ from enum import IntEnum
 from typing import List, NamedTuple
 
 from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import AdvertisementData
 
 
 DOMAIN = "elehant_meter"

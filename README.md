@@ -39,4 +39,4 @@
 
 ## Скриншоты
 
-![Screenshot status](images/2023-08-05_15-56-49.png)
+![Screenshot status](images/img1.png)

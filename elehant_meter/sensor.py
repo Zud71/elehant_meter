@@ -31,8 +31,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+
 from .const import DOMAIN
 from .const import log
+from .const import MeterType
+from .const import counters_mac
 
 
 @dataclass
@@ -75,11 +78,34 @@ SENSOR_DESCRIPTIONS = {
 }
 
 
+def _device_key_to_bluetooth_entity_desc(   
+    device: BLEDevice,
+    key: str,
+    desc:ElehantSensorEntityDescription,
+    ) -> ElehantSensorEntityDescription:
+    """Замена типа счетчика"""
+
+    mac = device.address.lower()
+    result = desc
+
+    if key=="meter_reading":
+        for key in counters_mac:
+            has_mac = mac[0:8] in counters_mac[key]
+            if has_mac :          
+                metertype = key
+                break
+            
+            if metertype != MeterType.GAS :
+                result.device_class=SensorDeviceClass.WATER
+
+    return result
+
 def _device_key_to_bluetooth_entity_key(
     device: BLEDevice,
     key: str,
 ) -> PassiveBluetoothEntityKey:
     """Convert a device key to an entity key."""
+
     return PassiveBluetoothEntityKey(key, device.address)
 
 
@@ -96,10 +122,11 @@ def sensor_update_to_bluetooth_data_update(
     adv: ElehantData,
 ) -> PassiveBluetoothDataUpdate:
     """Convert a sensor update to a Bluetooth data update."""
+    
     result =  PassiveBluetoothDataUpdate(
         devices={adv.device.address: _sensor_device_info_to_hass(adv)},
         entity_descriptions={
-            _device_key_to_bluetooth_entity_key(adv.device, key): desc
+            _device_key_to_bluetooth_entity_key(adv.device, key): _device_key_to_bluetooth_entity_desc(adv.device, key, desc) 
             for key, desc in SENSOR_DESCRIPTIONS.items()
         },
         entity_data={
