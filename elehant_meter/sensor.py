@@ -176,3 +176,7 @@ class ElehantBluetoothSensorEntity(
     def native_value(self) -> int | float | None:
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
+    
+    @property
+    def icon(self):
+        return self._icon

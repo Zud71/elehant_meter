@@ -85,7 +85,6 @@ class ElehantData:
                 self.rssi = ad_data.rssi
 
 
-
 def log(data) -> None:
 
     my_file = open("elehant_meter.log", "a")
