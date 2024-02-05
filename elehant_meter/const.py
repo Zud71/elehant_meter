@@ -69,7 +69,7 @@ class ElehantData:
             if has_manufacurer_data and has_mac:
                 raw_bytes = ad_data.manufacturer_data[MANUFACTURER_ID]
                 
-                c_num = int.from_bytes(raw_bytes[6:9], byteorder='little')
+                c_num = int.from_bytes(raw_bytes[6:8], byteorder='little')
                 c_count = int.from_bytes(raw_bytes[9:13], byteorder='little')
                 c_temp = int.from_bytes(raw_bytes[14:16], byteorder="little") / 100
 
