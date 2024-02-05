@@ -56,8 +56,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         adv = self._discovered_device
 
         title = adv.name 
+        assert title is None, "Ошибка: Пустой заголовок"
+
         if user_input is not None:
             return self.async_create_entry(title=title, data={})
+
+        assert title is not None
 
         self._set_confirm_only()
         placeholders = {"name": title}
