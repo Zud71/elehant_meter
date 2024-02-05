@@ -177,6 +177,7 @@ class ElehantBluetoothSensorEntity(
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
     
-    @property
-    def icon(self):
-        return self._icon
+    #@property
+    #def icon(self):
+        #return {"icon": "mdi:alarm-bell"}.get("icon")
+
