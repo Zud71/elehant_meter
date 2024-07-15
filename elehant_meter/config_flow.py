@@ -95,9 +95,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             adv = ElehantData(
                 discovery_info.device, discovery_info.advertisement
             )
-            if adv.manufacturer_data:
+            if adv.metertype:
                 self._discovered_devices[address] = (
-                    adv.readings.name if adv.readings else discovery_info.name,
+                    adv.name,
                     adv,
                 )
 
