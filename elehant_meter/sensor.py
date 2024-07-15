@@ -158,7 +158,7 @@ async def async_setup_entry(
 
 
 class ElehantBluetoothSensorEntity(
-    PassiveBluetoothProcessorEntity[PassiveBluetoothDataProcessor[float | int | None]],
+    PassiveBluetoothProcessorEntity[PassiveBluetoothDataProcessor[float | int | None,ElehantData]],
     SensorEntity,
 ):
     """Representation of an Elehant sensor."""
