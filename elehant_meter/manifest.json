@@ -7,14 +7,12 @@
       "connectable": false
     }
   ],
-  "codeowners": ["@Zud71"],
+  "codeowners": [],
   "config_flow": true,
   "dependencies": ["bluetooth_adapters"],
-  "documentation": "https://github.com/Zud71/elehant_meter",
-  "issue_tracker": "https://github.com/Zud71/elehant_meter/issues",
+  "documentation": "",
   "integration_type": "device",
   "iot_class": "local_push",
-  "requirements": ["bleak"],
+  "requirements": ["voluptuous","bleak"],
   "version": "0.0.1"
 }
-
