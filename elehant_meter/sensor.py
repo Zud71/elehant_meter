@@ -85,9 +85,14 @@ def _device_key_to_bluetooth_entity_desc(
     ) -> ElehantSensorEntityDescription:
     """Замена типа счетчика"""
 
+    _LOGGER.debug("_device_key_to_bluetooth_entity_desc СТАРТ")
+
     mac = device.address.lower()
     result = desc
     metertype: MeterType = None    
+
+    _LOGGER.debug("MAC: %s", mac)
+    _LOGGER.debug("KEY: %s", key)
 
     if key == "meter_reading":
         for key in counters_mac:
@@ -96,6 +101,7 @@ def _device_key_to_bluetooth_entity_desc(
                 metertype = key
                 break
 
+        _LOGGER.debug("metertype: %s", metertype)
         assert metertype is not None, "Неизвестное устройство"
         
         if metertype != MeterType.GAS :
