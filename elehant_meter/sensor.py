@@ -112,6 +112,8 @@ def _device_key_to_bluetooth_entity_desc(
 
     return result
 
+
+
 def _device_key_to_bluetooth_entity_key(
     device: BLEDevice,
     key: str,
