@@ -37,6 +37,9 @@ from .const import log
 from .const import MeterType
 from .const import counters_mac
 
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class ElehantSensorEntityDescription(SensorEntityDescription):
