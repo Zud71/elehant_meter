@@ -89,17 +89,17 @@ def _device_key_to_bluetooth_entity_desc(
     result = desc
     metertype: MeterType = None    
 
-    if key=="meter_reading":
+    if key == "meter_reading":
         for key in counters_mac:
             has_mac = mac[0:8] in counters_mac[key]
-            if has_mac :          
+            if has_mac:
                 metertype = key
                 break
-    
-    assert metertype is not None, "Неизвестное устройство"
+
+        assert metertype is not None, "Неизвестное устройство"
         
-    if metertype != MeterType.GAS :
-       result.device_class=SensorDeviceClass.WATER
+        if metertype != MeterType.GAS :
+            result.device_class=SensorDeviceClass.WATER
 
     return result
 
