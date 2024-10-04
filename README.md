@@ -1,6 +1,8 @@
 # elehant_meter
 Компонент интеграции счётчиков ресурсов от Элехант с Home Assistant.
 
+Подробнее можно почитать [тут](https://orycan.ru/blog/post/elehant_meter)
+
 ## Требования
 * Для интеграции требуется наличие Bluetooth модуля в сервере HA.
 * Модуль тестировался при использовании esphome esp32-bluetooth-proxy, так же должен работать с физическим адаптером bluetooth
