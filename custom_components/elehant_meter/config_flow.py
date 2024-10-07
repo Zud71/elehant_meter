@@ -16,7 +16,6 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.data_entry_flow import AbortFlow, FlowResult
 
 from .const import DOMAIN
-from .const import log
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,18 +29,16 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._discovered_device: ElehantData | None = None
         self._discovered_devices: dict[str, tuple[str, ElehantData]] = {}
 
-
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
     ) -> FlowResult:
         """Handle the Bluetooth discovery step."""
 
-        _LOGGER.debug("Discovered BT device: %s", discovery_info)
+        _LOGGER.debug("Обнаружено устройство BT: %s", discovery_info)
 
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
         adv = ElehantData(discovery_info.device, discovery_info.advertisement)
-
 
         self._discovery_info = discovery_info
 
@@ -55,21 +52,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         assert self._discovered_device is not None
         adv = self._discovered_device
 
-        title = adv.name 
+        title = adv.name
         assert title is not None, "Ошибка: Пустой заголовок"
 
         if user_input is not None:
             return self.async_create_entry(title=title, data={})
 
         assert title is not None
-        
+
         self._set_confirm_only()
         placeholders = {"name": title}
         self.context["title_placeholders"] = placeholders
         return self.async_show_form(
             step_id="bluetooth_confirm", description_placeholders=placeholders
         )
-    
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -95,7 +91,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             adv = ElehantData(
                 discovery_info.device, discovery_info.advertisement
             )
-            if adv.metertype:
+            if adv.macdata.signValid:
                 self._discovered_devices[address] = (
                     adv.name,
                     adv,
@@ -116,4 +112,4 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 }
             ),
-        ) 
+        )

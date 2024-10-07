@@ -25,7 +25,8 @@ from homeassistant.const import (
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
     UnitOfTemperature,
-    UnitOfVolume
+    UnitOfVolume,
+    UnitOfPower
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
@@ -33,13 +34,14 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 
 from .const import DOMAIN
-from .const import log
 from .const import MeterType
-from .const import counters_mac
+from .const import MacData
+from .const import parse_mac
 
 import logging
 
 _LOGGER = logging.getLogger(__name__)
+
 
 @dataclass
 class ElehantSensorEntityDescription(SensorEntityDescription):
@@ -59,7 +61,7 @@ SENSOR_DESCRIPTIONS = {
         key="meter_reading",
         name="Показания",
         device_class=SensorDeviceClass.GAS,
-        native_unit_of_measurement= UnitOfVolume.CUBIC_METERS,
+        native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
         state_class=SensorStateClass.TOTAL,
     ),
     "battery": ElehantSensorEntityDescription(
@@ -81,37 +83,47 @@ SENSOR_DESCRIPTIONS = {
 }
 
 
-def _device_key_to_bluetooth_entity_desc(   
+def _device_key_to_bluetooth_entity_desc(
     device: BLEDevice,
     key: str,
-    desc:ElehantSensorEntityDescription,
-    ) -> ElehantSensorEntityDescription:
+    desc: ElehantSensorEntityDescription,
+) -> ElehantSensorEntityDescription:
     """Замена типа счетчика"""
 
-    _LOGGER.debug("_device_key_to_bluetooth_entity_desc СТАРТ")
+    _LOGGER.debug("_device_key_to_bluetooth_entity_desc")
 
     mac = device.address.lower()
     result = desc
-    metertype: MeterType = None    
 
-    _LOGGER.debug("MAC: %s", mac)
-    _LOGGER.debug("KEY: %s", key)
+    # _LOGGER.debug("MAC: %s", mac)
+    # _LOGGER.debug("KEY: %s", key)
 
     if key == "meter_reading":
-        for key in counters_mac:
-            has_mac = mac[0:8] in counters_mac[key]
-            if has_mac:
-                metertype = key
-                break
+        _LOGGER.debug("MAC: %s", mac)
+        _LOGGER.debug("KEY: %s", key)
 
-        _LOGGER.debug("metertype: %s", metertype)
-        assert metertype is not None, "Неизвестное устройство"
-        
-        if metertype != MeterType.GAS :
-            result.device_class=SensorDeviceClass.WATER
+        macdata = parse_mac(mac)
+
+        _LOGGER.debug("metertype: %s", macdata.mtype)
+
+        assert macdata.signValid is not None, "Неизвестное устройство"
+
+        if macdata.mtype == MeterType.GAS:
+            result.device_class = SensorDeviceClass.GAS
+            _LOGGER.debug("Выбран тип: GAS")
+        if macdata.mtype == MeterType.WATER:
+            result.device_class = SensorDeviceClass.WATER
+            _LOGGER.debug("Выбран тип: WATER")
+        if macdata.mtype == MeterType.ELECTRIC:
+            result.device_class = SensorDeviceClass.ENERGY
+            result.native_unit_of_measurement = UnitOfPower.KILO_WATT
+            _LOGGER.debug("Выбран тип: ELECTRIC")
+        if macdata.mtype == MeterType.HEAT:
+            result.device_class = SensorDeviceClass.ENERGY
+            result.native_unit_of_measurement = "Gcal"
+            _LOGGER.debug("Выбран тип: HEAT")
 
     return result
-
 
 
 def _device_key_to_bluetooth_entity_key(
@@ -127,8 +139,15 @@ def _sensor_device_info_to_hass(
     adv: ElehantData,
 ) -> DeviceInfo:
     """Convert a sensor device info to hass device info."""
-    hass_device_info = DeviceInfo({})
+    hass_device_info = DeviceInfo(
+        name = adv.name,
+        serial_number=adv.id_meter,
+        model_id=adv.device.address,
+        model = adv.name_model,
+        manufacturer = "Элехант"
+    )
 
+    _LOGGER.debug("sensor_device_info_to_hass: %s", hass_device_info)
     return hass_device_info
 
 
@@ -136,11 +155,11 @@ def sensor_update_to_bluetooth_data_update(
     adv: ElehantData,
 ) -> PassiveBluetoothDataUpdate:
     """Convert a sensor update to a Bluetooth data update."""
-    
-    result =  PassiveBluetoothDataUpdate(
+
+    result = PassiveBluetoothDataUpdate(
         devices={adv.device.address: _sensor_device_info_to_hass(adv)},
         entity_descriptions={
-            _device_key_to_bluetooth_entity_key(adv.device, key): _device_key_to_bluetooth_entity_desc(adv.device, key, desc) 
+            _device_key_to_bluetooth_entity_key(adv.device, key): _device_key_to_bluetooth_entity_desc(adv.device, key, desc)
             for key, desc in SENSOR_DESCRIPTIONS.items()
         },
         entity_data={
@@ -163,16 +182,18 @@ async def async_setup_entry(
     """Set up the Elehant sensors."""
 
     coordinator: PassiveBluetoothProcessorCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
-    processor = PassiveBluetoothDataProcessor(sensor_update_to_bluetooth_data_update)
 
-    entry.async_on_unload(processor.async_add_entities_listener(ElehantBluetoothSensorEntity, async_add_entities))
-    
+    processor = PassiveBluetoothDataProcessor(
+        sensor_update_to_bluetooth_data_update)
+
+    entry.async_on_unload(processor.async_add_entities_listener(
+        ElehantBluetoothSensorEntity, async_add_entities))
+
     entry.async_on_unload(coordinator.async_register_processor(processor))
 
 
 class ElehantBluetoothSensorEntity(
-    PassiveBluetoothProcessorEntity[PassiveBluetoothDataProcessor[float | int | None,ElehantData]],
+    PassiveBluetoothProcessorEntity[PassiveBluetoothDataProcessor[float | int | None, ElehantData]],
     SensorEntity,
 ):
     """Representation of an Elehant sensor."""
@@ -191,7 +212,6 @@ class ElehantBluetoothSensorEntity(
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
 
-    #@property
-    #def icon(self):
-        #return {"icon": "mdi:alarm-bell"}.get("icon")
-
+    # @property
+    # def icon(self):
+        # return {"icon": "mdi:alarm-bell"}.get("icon")
