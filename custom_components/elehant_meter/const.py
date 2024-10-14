@@ -7,6 +7,7 @@ from typing import List, NamedTuple
 from bleak.backends.device import BLEDevice
 import logging
 
+import json
 
 DOMAIN = "elehant_meter"
 _LOGGER = logging.getLogger(__name__)
@@ -97,6 +98,8 @@ class ElehantData:
     mtype: int = None
     model: int = None
     name_model: str = None
+    frimware: str = None
+    packetVer: int = None
 
     macdata: MacData = None
 
@@ -114,21 +117,20 @@ class ElehantData:
                 self.macdata.signValid = False
 
                 raw_bytes = ad_data.manufacturer_data[MANUFACTURER_ID]
-                check_ff = int.from_bytes(raw_bytes[3:4], byteorder="little")
+                packetVer = int.from_bytes(raw_bytes[3:4], byteorder="little")
+                
+                _LOGGER.debug("Версия пакета: %s", packetVer)
 
-                if has_manufacurer_data and check_ff == 1:
+                if has_manufacurer_data and packetVer == 1:
                     v_num = int.from_bytes(raw_bytes[6:9], byteorder='little')
-                    v_count = int.from_bytes(
-                        raw_bytes[9:13], byteorder='little')
-                    v_temp = int.from_bytes(
-                        raw_bytes[14:16], byteorder="little")
-                    v_battery = int.from_bytes(
-                        raw_bytes[13:14], byteorder="little")
-
-                    v_mtype = int.from_bytes(
-                        raw_bytes[4:5], byteorder="little")
-                    v_model = int.from_bytes(
-                        raw_bytes[5:6], byteorder="little")
+                    v_count = int.from_bytes(raw_bytes[9:13], byteorder='little')
+                    v_temp = int.from_bytes(raw_bytes[14:16], byteorder="little")
+                    v_battery = int.from_bytes(raw_bytes[13:14], byteorder="little")
+                    
+                    v_mtype = int.from_bytes(raw_bytes[4:5], byteorder="little")
+                    v_model = int.from_bytes(raw_bytes[5:6], byteorder="little")
+                    
+                    v_fw = int.from_bytes(raw_bytes[16:17], byteorder="little")
 
                     if v_mtype == self.macdata.mtype and v_model == self.macdata.model:
 
@@ -159,9 +161,11 @@ class ElehantData:
                         self.battery = v_battery
                         self.mtype = v_mtype
                         self.model = v_model
+                        self.frimware = v_fw/10
                         self.rssi = ad_data.rssi
 
                         self.macdata.signValid = True
+
 
                         _LOGGER.debug("Имя устройства: %s", self.name)
                         _LOGGER.debug("MAC: %s", mac)
@@ -170,18 +174,20 @@ class ElehantData:
                         _LOGGER.debug("Показания: %s", self.meter_reading)
                         _LOGGER.debug("Темперетара: %s", self.temperature)
                         _LOGGER.debug("Батарея: %s", self.battery)
+                        _LOGGER.debug("Сигнал: %s", self.rssi)
+
                         _LOGGER.debug("Тип мас: %s", self.mtype)
                         _LOGGER.debug("Модель мас: %s", self.model)
-                        _LOGGER.debug("Сигнал: %s", self.rssi)
+                        _LOGGER.debug("Версия прошивки: %s", self.frimware)
 
                 else:
                     self.macdata.signValid = False
                     _LOGGER.debug(
-                        "ElehantData init - не пройдена проверка по производителю и контрольному биту MAC %s", mac)
+                        "ElehantData init - не пройдена проверка по производителю или версии пакета MAC %s", mac)
         else:
             self.macdata.signValid = False
             _LOGGER.debug(
-                "ElehantData init - не пройдена device или ad_data пустые")
+                "ElehantData init - не пройдена, device или ad_data пустые")
 
 
 def parse_mac(in_mac) -> MacData:
@@ -197,8 +203,12 @@ def parse_mac(in_mac) -> MacData:
         if (result.mtype == MeterType.GAS and result.model in MeterModel[MeterType.GAS]) or (result.mtype == MeterType.WATER and result.model in MeterModel[MeterType.WATER]):
             result.signValid = True
     else:
-        _LOGGER.debug(
-            "parse_mac Устройство не Елехант только (B0), результат: %s", mac[0:2])
+        if mac[0:2] == "b1":
+            _LOGGER.debug(
+                "parse_mac Устройство Елехант (B1). Данные не расшифрованны, игнорирование, результат: %s", mac[0:2])
+        else:
+            _LOGGER.debug(
+                "parse_mac Устройство не Елехант только (B0 или В1) , результат: %s", mac[0:2])
 
     _LOGGER.debug("parse_mac signValid: %s", result.signValid)
     return result
