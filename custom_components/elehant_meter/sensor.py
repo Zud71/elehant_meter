@@ -144,6 +144,7 @@ def _sensor_device_info_to_hass(
         serial_number=adv.id_meter,
         model_id=adv.device.address,
         model = adv.name_model,
+        hw_version=adv.frimware,
         manufacturer = "Элехант"
     )
 

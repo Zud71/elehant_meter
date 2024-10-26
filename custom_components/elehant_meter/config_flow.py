@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from .const import ElehantData
+from .const import MANUFACTURER_ID
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -35,15 +36,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the Bluetooth discovery step."""
 
         _LOGGER.debug("Обнаружено устройство BT: %s", discovery_info)
+        _LOGGER.debug("Данные в HEX: %s", discovery_info.manufacturer_data[MANUFACTURER_ID].hex().upper())
 
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
         adv = ElehantData(discovery_info.device, discovery_info.advertisement)
+        
+        if not adv.macdata.signValid:
+            _LOGGER.debug("Обнаружено неподдерживаемое устройство: %s", discovery_info)
+            return self.async_abort(reason="not_supported")
 
         self._discovery_info = discovery_info
 
         self._discovered_device = adv
         return await self.async_step_bluetooth_confirm()
+            
 
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
@@ -52,20 +59,24 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         assert self._discovered_device is not None
         adv = self._discovered_device
 
-        title = adv.name
-        assert title is not None, "Ошибка: Пустой заголовок"
+        _LOGGER.debug("async_step_bluetooth_confirm: %s", adv)
 
-        if user_input is not None:
-            return self.async_create_entry(title=title, data={})
+        if adv.macdata.signValid:
+            title = adv.name
+            assert title is not None, "Ошибка: Пустой заголовок"
 
-        assert title is not None
+            if user_input is not None:
+                return self.async_create_entry(title=title, data={})
 
-        self._set_confirm_only()
-        placeholders = {"name": title}
-        self.context["title_placeholders"] = placeholders
-        return self.async_show_form(
-            step_id="bluetooth_confirm", description_placeholders=placeholders
-        )
+            self._set_confirm_only()
+            placeholders = {"name": title}
+            self.context["title_placeholders"] = placeholders
+            return self.async_show_form(
+                step_id="bluetooth_confirm", description_placeholders=placeholders)
+                
+        else:
+            _LOGGER.debug("Confirm discovery - не пройден: %s", adv)
+            return self.async_abort(reason="not_supported")
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
