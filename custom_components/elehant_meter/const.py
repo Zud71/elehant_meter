@@ -9,7 +9,7 @@ import logging
 
 import json
 
-DOMAIN = "elehant_meter"
+DOMAIN = "elehant"
 _LOGGER = logging.getLogger(__name__)
 
 # Manufacurer id
