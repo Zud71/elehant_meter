@@ -5,6 +5,7 @@ from enum import IntEnum
 from typing import List, NamedTuple
 
 from bleak.backends.device import BLEDevice
+import datetime as dTime
 import logging
 
 import json
@@ -93,6 +94,7 @@ class ElehantData:
     temperature: str = None
     rssi: str = None
     battery: int = None
+    timestamp: dTime.datetime = None
 
     id_meter: str = None
     mtype: int = None
@@ -164,6 +166,8 @@ class ElehantData:
                         self.frimware = v_fw/10
                         self.rssi = ad_data.rssi
 
+                        self.timestamp = dTime.datetime.now(dTime.UTC)
+
                         self.macdata.signValid = True
 
 
@@ -175,6 +179,7 @@ class ElehantData:
                         _LOGGER.debug("Темперетара: %s", self.temperature)
                         _LOGGER.debug("Батарея: %s", self.battery)
                         _LOGGER.debug("Сигнал: %s", self.rssi)
+                        _LOGGER.debug("Отметка времени: %s", self.timestamp)
 
                         _LOGGER.debug("Тип мас: %s", self.mtype)
                         _LOGGER.debug("Модель мас: %s", self.model)
