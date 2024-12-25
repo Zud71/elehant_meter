@@ -80,6 +80,14 @@ SENSOR_DESCRIPTIONS = {
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
+    "timestamp": ElehantSensorEntityDescription(
+        key="timestamp",
+        name="Обновлено",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        icon="mdi:invoice-clock-outline",
+    ),
 }
 
 
@@ -111,12 +119,19 @@ def _device_key_to_bluetooth_entity_desc(
         if macdata.mtype == MeterType.GAS:
             result.device_class = SensorDeviceClass.GAS
             _LOGGER.debug("Выбран тип: GAS")
+
         if macdata.mtype == MeterType.WATER:
-            result.device_class = SensorDeviceClass.WATER
             _LOGGER.debug("Выбран тип: WATER")
-        if macdata.mtype == MeterType.ELECTRIC:
+            result.device_class = SensorDeviceClass.WATER
+            result.name = "Вода хол"
+
+            if macdata.model == 4 or macdata.model == 6:
+               result.key= "meter_reading_second"
+               result.name="Вода гор"            
+            
+        if macdata.mtype == MeterType.ELECTRIC:  
             result.device_class = SensorDeviceClass.ENERGY
-            result.native_unit_of_measurement = UnitOfPower.KILO_WATT
+            result.native_unit_of_measurement = UnitOfPower.KILO_WATT_HOUR
             _LOGGER.debug("Выбран тип: ELECTRIC")
         if macdata.mtype == MeterType.HEAT:
             result.device_class = SensorDeviceClass.ENERGY
@@ -142,7 +157,7 @@ def _sensor_device_info_to_hass(
     hass_device_info = DeviceInfo(
         name = adv.name,
         serial_number=adv.id_meter,
-        model_id=adv.device.address,
+       # model_id=adv.device.address,
         model = adv.name_model,
         hw_version=adv.frimware,
         manufacturer = "Элехант"
@@ -156,7 +171,7 @@ def sensor_update_to_bluetooth_data_update(
     adv: ElehantData,
 ) -> PassiveBluetoothDataUpdate:
     """Convert a sensor update to a Bluetooth data update."""
-
+   
     result = PassiveBluetoothDataUpdate(
         devices={adv.device.address: _sensor_device_info_to_hass(adv)},
         entity_descriptions={
@@ -172,6 +187,8 @@ def sensor_update_to_bluetooth_data_update(
             for key, desc in SENSOR_DESCRIPTIONS.items()
         },
     )
+    _LOGGER.debug("sensor_update_to_bluetooth_data_update: %s", result)
+
     return result
 
 
@@ -213,6 +230,34 @@ class ElehantBluetoothSensorEntity(
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
 
-    # @property
-    # def icon(self):
-        # return {"icon": "mdi:alarm-bell"}.get("icon")
+    @property
+    def icon(self) -> str | None:
+        """Return the icon to use in the frontend, if any."""
+
+        assert (value := self.native_value) is not None
+
+        if (key := self.entity_key.key) == "rssi":
+            if value < -85:
+                value = 1
+
+            elif value < -60:
+                value = 2
+
+            else:
+                value = 3
+
+            return f"mdi:signal-cellular-{value}"
+
+        if key == "battery":
+            if value >= 90:
+                value = "high"
+
+            elif value >= 60:
+                value = "medium"
+
+            else:
+                value = "low"
+
+            return f"mdi:battery-{value}"
+
+        return super().icon

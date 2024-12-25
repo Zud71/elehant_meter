@@ -89,6 +89,7 @@ class ElehantData:
 
     device: BLEDevice = None
     name: str = None
+    unique_id: str = None
 
     meter_reading: str = None
     temperature: str = None
@@ -110,6 +111,8 @@ class ElehantData:
         if device and ad_data:
             self.device = device
             mac = device.address.lower()
+            
+            self.unique_id = device.address.upper()
 
             has_manufacurer_data = MANUFACTURER_ID in ad_data.manufacturer_data
 
@@ -148,10 +151,13 @@ class ElehantData:
                             self.name += "газа "
                         if v_mtype == MeterType.WATER:
                             self.name += "воды "
+                            self.unique_id = mod_id(self.unique_id,self.macdata.model)
+
                         if v_mtype == MeterType.ELECTRIC:
                             self.name += "электричества "
                         if v_mtype == MeterType.HEAT:
                             self.name += "тепла "
+
 
                         v_num = '{:07}'.format(v_num)
                         self.name += v_name_model + ": " + v_num
@@ -176,7 +182,7 @@ class ElehantData:
                         _LOGGER.debug("ID: %s", self.id_meter)
                         _LOGGER.debug("Модель: %s", self.name_model)
                         _LOGGER.debug("Показания: %s", self.meter_reading)
-                        _LOGGER.debug("Темперетара: %s", self.temperature)
+                        _LOGGER.debug("Температура: %s", self.temperature)
                         _LOGGER.debug("Батарея: %s", self.battery)
                         _LOGGER.debug("Сигнал: %s", self.rssi)
                         _LOGGER.debug("Отметка времени: %s", self.timestamp)
@@ -216,4 +222,20 @@ def parse_mac(in_mac) -> MacData:
                 "parse_mac Устройство не Елехант только (B0 или В1) , результат: %s", mac[0:2])
 
     _LOGGER.debug("parse_mac signValid: %s", result.signValid)
+    return result
+
+def mod_id(in_mac,v_model) -> str:
+    mac = str(in_mac)
+    result: str
+
+    _LOGGER.debug("Смена ID: %s", mac)
+
+    if v_model == 4:
+        result = mac[:4] + "3" + mac[5:]
+    
+    if v_model == 6:
+        result = mac[:4] + "5" + mac[5:]
+
+    _LOGGER.debug("Новое ID: %s", mac)
+
     return result

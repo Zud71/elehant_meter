@@ -38,13 +38,15 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("Обнаружено устройство BT: %s", discovery_info)
         _LOGGER.debug("Данные в HEX: %s", discovery_info.manufacturer_data[MANUFACTURER_ID].hex().upper())
 
-        await self.async_set_unique_id(discovery_info.address)
-        self._abort_if_unique_id_configured()
         adv = ElehantData(discovery_info.device, discovery_info.advertisement)
-        
+
         if not adv.macdata.signValid:
             _LOGGER.debug("Обнаружено неподдерживаемое устройство: %s", discovery_info)
             return self.async_abort(reason="not_supported")
+
+        await self.async_set_unique_id(adv.unique_id)
+        self._abort_if_unique_id_configured()
+
 
         self._discovery_info = discovery_info
 
@@ -89,6 +91,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             await self.async_set_unique_id(address, raise_on_progress=False)
             self._abort_if_unique_id_configured()
+
             return self.async_create_entry(
                 title=self._discovered_devices[address][0], data={}
             )
