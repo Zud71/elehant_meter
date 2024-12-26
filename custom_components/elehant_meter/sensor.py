@@ -199,6 +199,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up the Elehant sensors."""
 
+    _LOGGER.debug("async_setup_entry: %s", entry)
+
     coordinator: PassiveBluetoothProcessorCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     processor = PassiveBluetoothDataProcessor(
