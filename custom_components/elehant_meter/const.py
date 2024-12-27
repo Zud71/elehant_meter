@@ -225,8 +225,8 @@ def parse_mac(in_mac) -> MacData:
     return result
 
 def mod_id(in_mac,v_model) -> str:
-    mac = str(in_mac)
-    result: str
+    
+    result = mac = in_mac
 
     _LOGGER.debug("Смена ID: %s", mac)
 
@@ -236,6 +236,6 @@ def mod_id(in_mac,v_model) -> str:
     if v_model == 6:
         result = mac[:4] + "5" + mac[5:]
 
-    _LOGGER.debug("Новое ID: %s", mac)
+    _LOGGER.debug("Новое ID: %s", result)
 
     return result
