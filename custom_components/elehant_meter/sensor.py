@@ -85,7 +85,7 @@ SENSOR_DESCRIPTIONS = {
         name="Обновлено",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        entity_registry_enabled_default=False,
+        entity_registry_enabled_default=True,
         icon="mdi:invoice-clock-outline",
     ),
 }
@@ -122,12 +122,7 @@ def _device_key_to_bluetooth_entity_desc(
 
         if macdata.mtype == MeterType.WATER:
             _LOGGER.debug("Выбран тип: WATER")
-            result.device_class = SensorDeviceClass.WATER
-            result.name = "Вода хол"
-
-            if macdata.model == 4 or macdata.model == 6:
-               result.key= "meter_reading_second"
-               result.name="Вода гор"            
+            result.device_class = SensorDeviceClass.WATER          
             
         if macdata.mtype == MeterType.ELECTRIC:  
             result.device_class = SensorDeviceClass.ENERGY
@@ -157,7 +152,7 @@ def _sensor_device_info_to_hass(
     hass_device_info = DeviceInfo(
         name = adv.name,
         serial_number=adv.id_meter,
-       # model_id=adv.device.address,
+        model_id=adv.device.address,
         model = adv.name_model,
         hw_version=adv.frimware,
         manufacturer = "Элехант"

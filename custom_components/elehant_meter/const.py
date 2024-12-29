@@ -89,7 +89,6 @@ class ElehantData:
 
     device: BLEDevice = None
     name: str = None
-    unique_id: str = None
 
     meter_reading: str = None
     temperature: str = None
@@ -112,7 +111,6 @@ class ElehantData:
             self.device = device
             mac = device.address.lower()
             
-            self.unique_id = device.address.upper()
 
             has_manufacurer_data = MANUFACTURER_ID in ad_data.manufacturer_data
 
@@ -138,6 +136,8 @@ class ElehantData:
                     v_fw = int.from_bytes(raw_bytes[16:17], byteorder="little")
 
                     if v_mtype == self.macdata.mtype and v_model == self.macdata.model:
+                        
+                        name_model_post: str = ""
 
                         v_count = v_count/10000
                         v_temp = v_temp/100
@@ -151,7 +151,12 @@ class ElehantData:
                             self.name += "газа "
                         if v_mtype == MeterType.WATER:
                             self.name += "воды "
-                            self.unique_id = mod_id(self.unique_id,self.macdata.model)
+                            if v_model == 4 or v_model == 6:
+                                self.name += "горячей "
+                                name_model_post= " ГОРЯЧАЯ"
+                            if v_model == 3 or v_model == 5:
+                                self.name += "холодной "
+                                name_model_post= " ХОЛОДНАЯ"
 
                         if v_mtype == MeterType.ELECTRIC:
                             self.name += "электричества "
@@ -163,7 +168,7 @@ class ElehantData:
                         self.name += v_name_model + ": " + v_num
 
                         self.id_meter = v_num
-                        self.name_model = v_name_model
+                        self.name_model = v_name_model+name_model_post
                         self.meter_reading = str(v_count)
                         self.temperature = str(v_temp)
                         self.battery = v_battery
@@ -222,20 +227,4 @@ def parse_mac(in_mac) -> MacData:
                 "parse_mac Устройство не Елехант только (B0 или В1) , результат: %s", mac[0:2])
 
     _LOGGER.debug("parse_mac signValid: %s", result.signValid)
-    return result
-
-def mod_id(in_mac,v_model) -> str:
-    
-    result = mac = in_mac
-
-    _LOGGER.debug("Смена ID: %s", mac)
-
-    if v_model == 4:
-        result = mac[:4] + "3" + mac[5:]
-    
-    if v_model == 6:
-        result = mac[:4] + "5" + mac[5:]
-
-    _LOGGER.debug("Новое ID: %s", result)
-
     return result

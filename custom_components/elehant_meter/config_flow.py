@@ -44,11 +44,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.debug("Обнаружено неподдерживаемое устройство: %s", discovery_info)
             return self.async_abort(reason="not_supported")
 
-        _LOGGER.debug("Установка ID: %s", adv.unique_id)
-        await self.async_set_unique_id(adv.unique_id)
+        _LOGGER.debug("Установка ID: %s", discovery_info.address)
+        await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
 
         _LOGGER.debug("Пройдена установка ID")
+
 
         self._discovery_info = discovery_info
 
