@@ -24,6 +24,7 @@ from homeassistant.const import (
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
+    UnitOfEnergy,
     UnitOfTemperature,
     UnitOfVolume,
     UnitOfPower
@@ -60,7 +61,7 @@ SENSOR_DESCRIPTIONS = {
     "meter_reading": ElehantSensorEntityDescription(
         key="meter_reading",
         name="Показания",
-        device_class=SensorDeviceClass.GAS,
+        device_class=None,  # Will be set dynamically based on meter type
         native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
         state_class=SensorStateClass.TOTAL,
     ),
@@ -130,7 +131,7 @@ def _device_key_to_bluetooth_entity_desc(
             _LOGGER.debug("Выбран тип: ELECTRIC")
         if macdata.mtype == MeterType.HEAT:
             result.device_class = SensorDeviceClass.ENERGY
-            result.native_unit_of_measurement = "Gcal"
+            result.native_unit_of_measurement = UnitOfEnergy.GIGA_CALORIES
             _LOGGER.debug("Выбран тип: HEAT")
 
     return result
